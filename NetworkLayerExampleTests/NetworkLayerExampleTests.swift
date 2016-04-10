@@ -22,14 +22,25 @@ class NetworkLayerExampleTests: XCTestCase {
     }
     
     func testBandwidthPriorities() {
-        let controller = NetworkController(scales: DefaultScales())
+        let scales = DefaultScales()
+        let controller = NetworkController(scales: scales)
+        
+        controller.successCallback = { request in
+            let bandwidth = request.bandwidth
+            let networkQuality = scales.qualityForBandwidth(bandwidth)
+            print(String(format: ":) Finished %.3fKb/s  Average %.3fKb/s :: Network is \(networkQuality) \(request.name)", bandwidth, request.average))
+        }
+        controller.failureCallback = { request in
+            let bandwidth = request.bandwidth
+            let networkQuality = scales.qualityForBandwidth(bandwidth)
+            print(String(format: ":( Canceled %.3fKb/s :: Network is \(networkQuality) \(request.name)", bandwidth))
+        }
+        
         veryLow(controller)
         low(controller)
         normal(controller)
         high(controller)
         veryHigh(controller)
-        
-        // we should use kvo to get the performance here
     }
     
     func veryLow(networkController: NetworkController) {
