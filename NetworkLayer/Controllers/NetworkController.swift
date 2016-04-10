@@ -2,6 +2,11 @@ import Foundation
 
 public class NetworkController: NSObject {
     
+    public typealias NetworkResultCallback = (BaseRequest) -> Void
+    
+    public var successCallback: NetworkResultCallback?
+    public var failureCallback: NetworkResultCallback?
+    
     private let queue = NSOperationQueue()
     private let kvoFinishedKeypath  = "isFinished"
     private var kvoContext: UInt8   = 10
@@ -38,17 +43,19 @@ public class NetworkController: NSObject {
         guard let request = object as? BaseRequest where context == &kvoContext else { return }
         switch keyPath {
         case .Some(let value) where value == kvoFinishedKeypath:
-            let bandwidth = request.bandwidth
-            currentScale = bandwidthScales?.qualityForBandwidth(bandwidth)
-            networkMetrics.append(bandwidth)
-            removeObserver(request)
-            if (request.cancelled) {
-                print(String(format: ":( Canceled %.3fKb/s :: Network is \(currentScale) \(request.name)", bandwidth))
-            } else {
-                print(String(format: ":) Finished %.3fKb/s  Average %.3fKb/s :: Network is \(currentScale) \(request.name)", bandwidth, request.average))
-            }
+            finishedRequest(request)
         default:
             break
+        }
+    }
+    
+    func finishedRequest(request: BaseRequest) {
+        networkMetrics.append(request.bandwidth)
+        removeObserver(request)
+        if (request.cancelled) {
+            failureCallback?(request)
+        } else {
+            successCallback?(request)
         }
     }
     
