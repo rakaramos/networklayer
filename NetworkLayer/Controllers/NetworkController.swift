@@ -8,8 +8,9 @@ public class NetworkController: NSObject {
     private var networkMetrics      = [Double]()
     private var bandwidthScales: BandwidthScales?
     private var currentScale: NetworkQuality? {
-        didSet {
-            balanceQueue()
+        didSet(newValue) {
+            guard let scale = newValue else { return }
+            balanceQueue(scale)
         }
     }
     
@@ -61,10 +62,9 @@ public class NetworkController: NSObject {
         }
     }
     
-    private func balanceQueue() {
-        if let quality = currentScale, let priority = bandwidthScales?.operationQualityForNetworkQuality(quality) {
-            cancelRequestLowerThan(priority)
-        }
+    private func balanceQueue(quality: NetworkQuality) {
+        guard let priority = bandwidthScales?.operationQualityForNetworkQuality(quality) else { return }
+        cancelRequestLowerThan(priority)
     }
     
     // MARK: Cancelation
